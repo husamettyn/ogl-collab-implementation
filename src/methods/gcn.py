@@ -1,11 +1,16 @@
 """GCN-based link prediction method."""
 
+import logging
 from typing import Any
 
 from src.evaluation.metrics import DEFAULT_DATASET_NAME, DEFAULT_HITS_KS
 from src.evaluation.metrics import evaluate_link_prediction
 from src.evaluation.runtime import get_memory_usage_mb, track_resources
+from src.experiments.progress import progress_bar
 from src.methods.mlp import _edge_tensor, _require_torch
+
+
+logger = logging.getLogger(__name__)
 
 
 class GcnEncoder(_require_torch().nn.Module):
@@ -115,6 +120,8 @@ def train_gcn_epoch(
     train_edges: Any,
     optimizer: Any,
     batch_size: int,
+    epoch: int | None = None,
+    total_epochs: int | None = None,
 ) -> float:
     """Train the GCN encoder and link predictor for one epoch."""
     torch = _require_torch()
@@ -125,7 +132,12 @@ def train_gcn_epoch(
     total_loss = 0.0
     total_examples = 0
 
-    for perm in DataLoader(range(train_edges.size(0)), batch_size=batch_size, shuffle=True):
+    batches = DataLoader(range(train_edges.size(0)), batch_size=batch_size, shuffle=True)
+    description = "GCN batches"
+    if epoch is not None and total_epochs is not None:
+        description = f"GCN epoch {epoch}/{total_epochs}"
+
+    for perm in progress_bar(batches, desc=description, leave=False):
         optimizer.zero_grad()
 
         h = encoder(x, message_passing_edge_index)
@@ -156,6 +168,7 @@ def score_edges_gcn(
     message_passing_edge_index: Any,
     edges: Any,
     batch_size: int,
+    description: str = "GCN score batches",
 ) -> list[float]:
     """Score candidate edges with a trained GCN model."""
     torch = _require_torch()
@@ -168,7 +181,8 @@ def score_edges_gcn(
 
     with torch.no_grad():
         h = encoder(x, message_passing_edge_index)
-        for perm in DataLoader(range(edge_tensor.size(0)), batch_size=batch_size):
+        batches = DataLoader(range(edge_tensor.size(0)), batch_size=batch_size)
+        for perm in progress_bar(batches, desc=description, leave=False):
             edge = edge_tensor[perm]
             batch_scores = predictor(h[edge[:, 0]], h[edge[:, 1]]).view(-1)
             scores.extend(float(value) for value in batch_scores.cpu())
@@ -192,6 +206,13 @@ def run_gcn(
     hyperparameters = config.hyperparameters
     device = _select_device(config.device)
     torch.manual_seed(config.seed)
+    logger.info(
+        "Starting GCN: scale=%s epochs=%s batch_size=%s device=%s",
+        config.dataset_scale,
+        hyperparameters.get("epochs", 400),
+        hyperparameters.get("batch_size", 64 * 1024),
+        device,
+    )
 
     start_memory_mb = get_memory_usage_mb()
     with track_resources() as usage:
@@ -219,22 +240,26 @@ def run_gcn(
         )
 
         losses = []
-        for _ in range(hyperparameters.get("epochs", 400)):
-            losses.append(
-                train_gcn_epoch(
-                    encoder=encoder,
-                    predictor=predictor,
-                    x=x,
-                    message_passing_edge_index=message_passing_edge_index,
-                    train_edges=train_edges,
-                    optimizer=optimizer,
-                    batch_size=hyperparameters.get("batch_size", 64 * 1024),
-                )
+        epochs = hyperparameters.get("epochs", 400)
+        for epoch in progress_bar(range(1, epochs + 1), desc="GCN epochs"):
+            loss = train_gcn_epoch(
+                encoder=encoder,
+                predictor=predictor,
+                x=x,
+                message_passing_edge_index=message_passing_edge_index,
+                train_edges=train_edges,
+                optimizer=optimizer,
+                batch_size=hyperparameters.get("batch_size", 64 * 1024),
+                epoch=epoch,
+                total_epochs=epochs,
             )
+            losses.append(loss)
+            logger.info("GCN epoch %s/%s loss=%.6f", epoch, epochs, loss)
 
+        logger.info("Scoring GCN validation/test edges")
         positive_scores = {}
         negative_scores = {}
-        for split in ("valid", "test"):
+        for split in progress_bar(("valid", "test"), desc="GCN scoring"):
             if "edge" not in split_edge.get(split, {}) or "edge_neg" not in split_edge.get(split, {}):
                 continue
 
@@ -245,6 +270,7 @@ def run_gcn(
                 message_passing_edge_index=message_passing_edge_index,
                 edges=split_edge[split]["edge"],
                 batch_size=hyperparameters.get("batch_size", 64 * 1024),
+                description=f"GCN {split} positive",
             )
             negative_scores[split] = score_edges_gcn(
                 encoder=encoder,
@@ -253,6 +279,7 @@ def run_gcn(
                 message_passing_edge_index=message_passing_edge_index,
                 edges=split_edge[split]["edge_neg"],
                 batch_size=hyperparameters.get("batch_size", 64 * 1024),
+                description=f"GCN {split} negative",
             )
 
         metrics = evaluate_link_prediction(
@@ -261,6 +288,7 @@ def run_gcn(
             ks=ks,
             dataset_name=dataset_name,
         )
+        logger.info("Completed GCN metrics=%s", metrics)
 
     return {
         "method_name": "gcn",

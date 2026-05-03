@@ -61,10 +61,10 @@ def get_method_config(method_name: str) -> dict[str, Any]:
         return {
             "hidden_channels": 256,
             "num_layers": 3,
-            "dropout": 0.0,
-            "learning_rate": 0.001,
+            "dropout": 0.2,
+            "learning_rate": 0.005,
             "batch_size": 64 * 1024,
-            "epochs": 400,
+            "epochs": 200,
         }
 
     raise ValueError(f"Unsupported method_name: {method_name}")

@@ -14,6 +14,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from src.experiments.configs import SUPPORTED_METHODS, ExperimentConfig
 from src.experiments.configs import get_method_config
 from src.experiments.runner import run_experiment
+from src.experiments.runtime_config import configure_logging, suppress_known_warnings
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -23,7 +24,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--scale", type=float, default=0.1)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--device", default="cpu")
-    parser.add_argument("--epochs", type=int)
+    parser.add_argument(
+        "--epochs",
+        type=int,
+        default=200,
+        help="Training epochs for MLP/GCN (default: 200).",
+    )
     parser.add_argument("--batch-size", type=int)
     parser.add_argument("--hidden-channels", type=int)
     parser.add_argument("--num-layers", type=int)
@@ -71,6 +77,9 @@ def config_from_args(args: argparse.Namespace) -> ExperimentConfig:
 
 def main() -> None:
     """Run one experiment from CLI arguments."""
+    configure_logging()
+    suppress_known_warnings()
+
     parser = build_parser()
     args = parser.parse_args()
     config = config_from_args(args)

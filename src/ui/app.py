@@ -1,7 +1,7 @@
 """Streamlit dashboard application."""
 
 from src.ui.pages import render_algorithm_runner
-from src.ui.pages import render_dataset_manager
+from src.ui.pages import render_graph_explorer
 from src.ui.pages import render_results_dashboard
 
 
@@ -17,11 +17,15 @@ def main() -> None:
 
     page = st.sidebar.radio(
         "Page",
-        ("Dataset Manager", "Algorithm Runner", "Results Dashboard"),
+        (
+            "Graph Explorer",
+            "Algorithm Runner",
+            "Results Dashboard",
+        ),
     )
 
-    if page == "Dataset Manager":
-        render_dataset_manager()
+    if page == "Graph Explorer":
+        render_graph_explorer()
     elif page == "Algorithm Runner":
         render_algorithm_runner()
     else:

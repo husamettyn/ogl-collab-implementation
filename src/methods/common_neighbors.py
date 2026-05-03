@@ -2,11 +2,16 @@
 
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
+import logging
 from typing import Any
 
 from src.evaluation.metrics import DEFAULT_DATASET_NAME, DEFAULT_HITS_KS
 from src.evaluation.metrics import evaluate_link_prediction
 from src.evaluation.runtime import get_memory_usage_mb, track_resources
+from src.experiments.progress import progress_bar
+
+
+logger = logging.getLogger(__name__)
 
 
 Adjacency = dict[int, set[int]]
@@ -61,7 +66,7 @@ def fit_common_neighbors(
     """Build an adjacency map from training edges."""
     adjacency: Adjacency = {}
 
-    for source, target in iter_edge_pairs(train_edges):
+    for source, target in progress_bar(iter_edge_pairs(train_edges), desc="CN fit"):
         adjacency.setdefault(source, set()).add(target)
         if make_undirected:
             adjacency.setdefault(target, set()).add(source)
@@ -88,11 +93,12 @@ def score_edges_common_neighbors(
     model: CommonNeighborsModel,
     edges: Any,
     add_tie_breaker: bool = True,
+    description: str = "CN scoring",
 ) -> list[float]:
     """Score candidate edges by their number of shared neighbors."""
     scores: list[float] = []
 
-    for source, target in iter_edge_pairs(edges):
+    for source, target in progress_bar(iter_edge_pairs(edges), desc=description):
         score = float(_common_neighbor_count(model.adjacency, source, target))
         if add_tie_breaker:
             score += _tie_breaker(source, target)
@@ -114,6 +120,7 @@ def run_common_neighbors(
 ) -> dict[str, Any]:
     """Fit and evaluate Common Neighbors using OGB-style edge splits."""
     start_memory_mb = get_memory_usage_mb()
+    logger.info("Starting Common Neighbors")
 
     with track_resources() as usage:
         train_edges = _get_edges(split_edge, "train", "edge")
@@ -139,11 +146,13 @@ def run_common_neighbors(
                 model=model,
                 edges=positive_edges,
                 add_tie_breaker=add_tie_breaker,
+                description=f"CN {split} positive",
             )
             negative_scores[split] = score_edges_common_neighbors(
                 model=model,
                 edges=negative_edges,
                 add_tie_breaker=add_tie_breaker,
+                description=f"CN {split} negative",
             )
 
         metrics = evaluate_link_prediction(
@@ -152,6 +161,7 @@ def run_common_neighbors(
             ks=ks,
             dataset_name=dataset_name,
         )
+        logger.info("Completed Common Neighbors metrics=%s", metrics)
 
     return {
         "method_name": "common_neighbors",

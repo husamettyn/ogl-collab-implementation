@@ -73,9 +73,14 @@ streamlit run src/dash.py
 
 The dashboard includes:
 
-- Dataset Manager
+- Graph Explorer
 - Algorithm Runner
 - Results Dashboard
+
+Graph Explorer provides graph-level dataset visuals (sampled subgraph, degree
+distribution, and split composition). Algorithm Runner now supports presets
+and method-aware parameter controls. Results Dashboard supports filtering,
+KPI cards, best-per-method summaries, and optional loss-curve inspection.
 
 ## Project Layout
 

@@ -1,10 +1,15 @@
 """Feature-only MLP baseline for link prediction."""
 
+import logging
 from typing import Any
 
 from src.evaluation.metrics import DEFAULT_DATASET_NAME, DEFAULT_HITS_KS
 from src.evaluation.metrics import evaluate_link_prediction
 from src.evaluation.runtime import get_memory_usage_mb, track_resources
+from src.experiments.progress import progress_bar
+
+
+logger = logging.getLogger(__name__)
 
 
 def _require_torch() -> Any:
@@ -88,6 +93,8 @@ def train_mlp_epoch(
     train_edges: Any,
     optimizer: Any,
     batch_size: int,
+    epoch: int | None = None,
+    total_epochs: int | None = None,
 ) -> float:
     """Train the MLP link predictor for one epoch."""
     torch = _require_torch()
@@ -97,7 +104,12 @@ def train_mlp_epoch(
     total_loss = 0.0
     total_examples = 0
 
-    for perm in DataLoader(range(train_edges.size(0)), batch_size=batch_size, shuffle=True):
+    batches = DataLoader(range(train_edges.size(0)), batch_size=batch_size, shuffle=True)
+    description = "MLP batches"
+    if epoch is not None and total_epochs is not None:
+        description = f"MLP epoch {epoch}/{total_epochs}"
+
+    for perm in progress_bar(batches, desc=description, leave=False):
         optimizer.zero_grad()
         edge = train_edges[perm]
 
@@ -123,6 +135,7 @@ def score_edges_mlp(
     x: Any,
     edges: Any,
     batch_size: int,
+    description: str = "MLP score batches",
 ) -> list[float]:
     """Score candidate edges with a trained MLP predictor."""
     torch = _require_torch()
@@ -133,7 +146,8 @@ def score_edges_mlp(
     scores = []
 
     with torch.no_grad():
-        for perm in DataLoader(range(edge_tensor.size(0)), batch_size=batch_size):
+        batches = DataLoader(range(edge_tensor.size(0)), batch_size=batch_size)
+        for perm in progress_bar(batches, desc=description, leave=False):
             edge = edge_tensor[perm]
             batch_scores = predictor(x[edge[:, 0]], x[edge[:, 1]]).view(-1)
             scores.extend(float(value) for value in batch_scores.cpu())
@@ -157,6 +171,13 @@ def run_mlp(
     hyperparameters = config.hyperparameters
     device = _select_device(config.device)
     torch.manual_seed(config.seed)
+    logger.info(
+        "Starting MLP: scale=%s epochs=%s batch_size=%s device=%s",
+        config.dataset_scale,
+        hyperparameters.get("epochs", 200),
+        hyperparameters.get("batch_size", 64 * 1024),
+        device,
+    )
 
     start_memory_mb = get_memory_usage_mb()
     with track_resources() as usage:
@@ -176,20 +197,24 @@ def run_mlp(
         )
 
         losses = []
-        for _ in range(hyperparameters.get("epochs", 200)):
-            losses.append(
-                train_mlp_epoch(
-                    predictor=predictor,
-                    x=x,
-                    train_edges=train_edges,
-                    optimizer=optimizer,
-                    batch_size=hyperparameters.get("batch_size", 64 * 1024),
-                )
+        epochs = hyperparameters.get("epochs", 200)
+        for epoch in progress_bar(range(1, epochs + 1), desc="MLP epochs"):
+            loss = train_mlp_epoch(
+                predictor=predictor,
+                x=x,
+                train_edges=train_edges,
+                optimizer=optimizer,
+                batch_size=hyperparameters.get("batch_size", 64 * 1024),
+                epoch=epoch,
+                total_epochs=epochs,
             )
+            losses.append(loss)
+            logger.info("MLP epoch %s/%s loss=%.6f", epoch, epochs, loss)
 
+        logger.info("Scoring MLP validation/test edges")
         positive_scores = {}
         negative_scores = {}
-        for split in ("valid", "test"):
+        for split in progress_bar(("valid", "test"), desc="MLP scoring"):
             if "edge" not in split_edge.get(split, {}) or "edge_neg" not in split_edge.get(split, {}):
                 continue
 
@@ -198,12 +223,14 @@ def run_mlp(
                 x=x,
                 edges=split_edge[split]["edge"],
                 batch_size=hyperparameters.get("batch_size", 64 * 1024),
+                description=f"MLP {split} positive",
             )
             negative_scores[split] = score_edges_mlp(
                 predictor=predictor,
                 x=x,
                 edges=split_edge[split]["edge_neg"],
                 batch_size=hyperparameters.get("batch_size", 64 * 1024),
+                description=f"MLP {split} negative",
             )
 
         metrics = evaluate_link_prediction(
@@ -212,6 +239,7 @@ def run_mlp(
             ks=ks,
             dataset_name=dataset_name,
         )
+        logger.info("Completed MLP metrics=%s", metrics)
 
     return {
         "method_name": "mlp",
