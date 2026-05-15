@@ -53,15 +53,15 @@ def parse_tuning_grid(method_name: str, preset: str = "quick") -> dict[str, list
     if preset == "quick":
         return {
             "learning_rate": [0.0005, 0.001],
-            "dropout": [0.0, 0.2],
+            "dropout": [0.0, 0.1],
             "hidden_channels": [256],
             "num_layers": [3],
         }
     return {
         "learning_rate": [0.0005, 0.001, 0.005],
-        "dropout": [0.0, 0.2, 0.5],
-        "hidden_channels": [128, 256],
-        "num_layers": [2, 3],
+        "dropout": [0.0, 0.1, 0.2],
+        "hidden_channels": [128, 256, 512],
+        "num_layers": [2, 3, 4],
     }
 
 
