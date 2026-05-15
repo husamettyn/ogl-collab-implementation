@@ -60,7 +60,7 @@ def get_method_config(method_name: str) -> dict[str, Any]:
     if method_name == "gcn":
         return {
             "hidden_channels": 256,
-            "embed_channels": 128,
+            "embed_channels": 256,
             "num_layers": 3,
             "dropout": 0.2,
             "learning_rate": 0.005,

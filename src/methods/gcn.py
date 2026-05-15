@@ -101,9 +101,9 @@ class GcnEncoder(_require_torch().nn.Module):
 
 
 class GcnLinkPredictor(_require_torch().nn.Module):
-    """Compact MLP link predictor on concatenated embeddings.
+    """MLP link predictor on concatenated embeddings.
 
-    Uses ``cat(h_i, h_j)`` → shallow 2-layer MLP for fast convergence.
+    Uses ``cat(h_i, h_j)`` → 3-layer MLP with BatchNorm and residual.
     """
 
     def __init__(
@@ -111,30 +111,54 @@ class GcnLinkPredictor(_require_torch().nn.Module):
         in_channels: int,  # 2 × embedding_dim (concatenation)
         hidden_channels: int,
         out_channels: int = 1,
+        num_layers: int = 3,
         dropout: float = 0.2,
     ) -> None:
         super().__init__()
         torch = _require_torch()
 
+        if num_layers < 2:
+            raise ValueError("num_layers must be at least 2.")
+
         self.dropout_rate = dropout
 
-        self.net = torch.nn.Sequential(
-            torch.nn.Linear(in_channels, hidden_channels),
-            torch.nn.BatchNorm1d(hidden_channels),
-            torch.nn.ReLU(),
-            torch.nn.Dropout(dropout),
-            torch.nn.Linear(hidden_channels, out_channels),
-        )
+        self.layers = torch.nn.ModuleList()
+        self.norms = torch.nn.ModuleList()
+
+        # First layer: in → hidden
+        self.layers.append(torch.nn.Linear(in_channels, hidden_channels))
+        self.norms.append(torch.nn.BatchNorm1d(hidden_channels))
+
+        # Middle layers
+        for _ in range(num_layers - 2):
+            self.layers.append(torch.nn.Linear(hidden_channels, hidden_channels))
+            self.norms.append(torch.nn.BatchNorm1d(hidden_channels))
+
+        # Output layer
+        self.layers.append(torch.nn.Linear(hidden_channels, out_channels))
+        self.norms.append(None)
 
     def reset_parameters(self) -> None:
-        for module in self.net:
-            if hasattr(module, "reset_parameters"):
-                module.reset_parameters()
+        for layer in self.layers:
+            layer.reset_parameters()
+        for norm in self.norms:
+            if norm is not None:
+                norm.reset_parameters()
 
     def forward(self, h_i: Any, h_j: Any) -> Any:
         torch = _require_torch()
         h = torch.cat([h_i, h_j], dim=-1)
-        return torch.sigmoid(self.net(h))
+
+        for layer, norm in zip(self.layers, self.norms):
+            h = layer(h)
+            if norm is not None:
+                h = norm(h)
+                h = torch.nn.functional.relu(h)
+                h = torch.nn.functional.dropout(
+                    h, p=self.dropout_rate, training=self.training
+                )
+
+        return torch.sigmoid(h)
 
 
 # ── Utilities ─────────────────────────────────────────────────────────────
@@ -217,17 +241,16 @@ def train_gcn_epoch(
         neg_edge = torch.randint(
             0, x.size(0), edge.shape, dtype=torch.long, device=x.device
         )
-        # Mix 50% hard negatives: existing train edges with permuted endpoints
-        if torch.rand(1).item() < 0.5 and edge.size(0) > 1:
-            perm = torch.randperm(edge.size(0), device=edge.device)
-            hard_neg = torch.stack([
-                edge[perm, 0],  # source from random row
-                edge[:, 1],     # same target
-            ], dim=1)
-            # Keep only those that aren't actual positive edges (simple dedup)
-            neg_edge = torch.cat([neg_edge, hard_neg], dim=0)
-            # Take first batch_size worth
-            neg_edge = neg_edge[:edge.size(0)]
+        # ── Hard negative mixing DISABLED for debug ──
+        # # Mix 50% hard negatives: existing train edges with permuted endpoints
+        # if torch.rand(1).item() < 0.5 and edge.size(0) > 1:
+        #     perm = torch.randperm(edge.size(0), device=edge.device)
+        #     hard_neg = torch.stack([
+        #         edge[perm, 0],  # source from random row
+        #         edge[:, 1],     # same target
+        #     ], dim=1)
+        #     neg_edge = torch.cat([neg_edge, hard_neg], dim=0)
+        #     neg_edge = neg_edge[:edge.size(0)]
         neg_out = predictor(h[neg_edge[:, 0]], h[neg_edge[:, 1]]).view(-1)
         neg_loss = -torch.log(1 - neg_out + 1e-15).mean()
 
@@ -302,7 +325,7 @@ def run_gcn(
     epochs: int = hp.get("epochs", 400)
     batch_size: int = hp.get("batch_size", 64 * 1024)
     hidden_channels: int = hp.get("hidden_channels", 256)
-    embed_channels: int = hp.get("embed_channels", 128)
+    embed_channels: int = hp.get("embed_channels", 256)
     num_layers: int = hp.get("num_layers", 3)
     dropout: float = hp.get("dropout", 0.2)
     learning_rate: float = hp.get("learning_rate", 0.005)
@@ -333,6 +356,7 @@ def run_gcn(
             in_channels=2 * embed_channels,  # concatenation → 2×
             hidden_channels=hidden_channels,
             out_channels=1,
+            num_layers=num_layers,
             dropout=dropout,
         ).to(device)
 
