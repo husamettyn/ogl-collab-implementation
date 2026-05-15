@@ -306,7 +306,7 @@ Graf yapisini **message passing** ile dogrudan kullanan GNN modeli.
     with col2:
         st.warning("""
 **Varsayilan Hiperparametreler:**
-- Hidden: 256, Layers: 3
+- Hidden: 256, Embed: 128, Layers: 3
 - Dropout: 0.2, LR: 0.005
 - Batch: 65K, Epochs: 200
 - Grad clipping: 1.0

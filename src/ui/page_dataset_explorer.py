@@ -218,7 +218,6 @@ def render_dataset_explorer() -> None:
     """Render the comprehensive dataset exploration page."""
     st = require_streamlit()
 
-    st.header("Veri Seti Kesfi: ogbl-collab")
     st.markdown("---")
 
     # --- Hero kartlar ---

@@ -84,6 +84,33 @@ def run_multi_seed(
         else:
             logger.info("  %s: %s", name, path)
 
+    # Save epoch-level validation metrics
+    epoch_rows = []
+    for result in results:
+        val_metrics = result.get("val_metrics", [])
+        method = result.get("method_name", "?")
+        scale = result.get("dataset_scale", "?")
+        seed = result.get("seed", "?")
+        for vm in val_metrics:
+            epoch_rows.append({
+                "method": method,
+                "scale": scale,
+                "seed": seed,
+                "epoch": vm.get("epoch", 0),
+                "valid_hits_at_50": vm.get("valid_hits_at_50", 0),
+                "lr": vm.get("lr", 0),
+                "loss": result.get("losses", [None])[min(vm.get("epoch", 1) - 1, len(result.get("losses", [])) - 1)] if result.get("losses") else None,
+            })
+    if epoch_rows:
+        epoch_csv_path = runs_dir / "epoch_metrics.csv"
+        import csv
+        fieldnames = ["method", "scale", "seed", "epoch", "valid_hits_at_50", "lr", "loss"]
+        with epoch_csv_path.open("w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(epoch_rows)
+        logger.info("  Epoch metrics saved to %s (%d rows)", epoch_csv_path, len(epoch_rows))
+
     # Build summary
     summary_rows = make_summary_table(results)
     best_rows = make_best_results_table(results, split="test")
