@@ -292,15 +292,23 @@ def _render_gcn_method() -> None:
 
     with col1:
         st.markdown("""
-### GCN — Graph Convolutional Network
+### GCN v3 — Graph Convolutional Network
 
 Graf yapisini **message passing** ile dogrudan kullanan GNN modeli.
 
-**Iki Bilesen:**
-1. **GCN Encoder:** Node feature → komsu agregasyonu → embedding
-2. **MLP Predictor:** (h_A ⊙ h_B) → score
+**Uc Bilesen:**
+1. **GCN Encoder (256 → 128):** Node feature → komsu agregasyonu → kompakt embedding
+2. **Residual + BatchNorm:** Gradient akisini saglar, derin aglari stabilize eder
+3. **Link Predictor (256 → 1):** concat(h_A, h_B) → shallow MLP → score
 
-`h_A^(l+1) = σ( W·AGGREGATE({h_B : B∈N(A)}) )`
+**Iylestirmeler (v2 → v3):**
+- Embedding 256'dan **128'e** indirildi (daha kompakt, daha hizli)
+- Predictor 3-layer'dan **2-layer'a** (daha az parametre, daha iyi genelleme)
+- **Hard negative mining** (%50 oraninda)
+- LR 0.001 → **0.005**, Dropout 0.1 → **0.2**
+- Val freq 20 → **10**, Patience 3 → **5**
+
+`h_A^(l+1) = σ( W·AGGREGATE({h_B : B∈N(A)}) + h_A^(l) )`
 """)
 
     with col2:
@@ -349,13 +357,13 @@ def _render_conclusions() -> None:
     with findings_col1:
         st.markdown("### Bulgular")
         st.markdown("""
-1. **GCN en yuksek performans.** Graf yapisini kullanmak buyuk avantaj.
+1. **GCN v3 en yuksek performansi hedefliyor.** Embedding kompakligi ve hard negative mining ile CN'yi gecmesi bekleniyor.
 
-2. **CN sasirtici derecede iyi baseline.** Hizli, egitimsiz, aciklanabilir.
+2. **CN sasirtici derecede iyi baseline.** Hizli, egitimsiz, aciklanabilir. Ozellikle scale 1.0'da 0.515 Hits@50.
 
 3. **Scale arttikca performans artar.** Diminishing returns gozlenir.
 
-4. **MLP, GCN'den hizli ama daha dusuk performansli.**
+4. **MLP, GCN'den hizli ama daha dusuk performansli.** Feature-only, graf yapisini gormuyor.
 """)
 
     with findings_col2:
@@ -373,11 +381,12 @@ def _render_conclusions() -> None:
     st.markdown("---")
     st.markdown("### Gelecek Calismalar")
     st.markdown("""
+- ~~GCN v3: embed_channels=128, hard negative mining~~ ✅
+- GCN v3 multi-seed test ve tuning
 - GAT, GraphSAGE, SEAL gibi gelismis GNN'ler
 - Edge weight ve year feature olarak kullanma
 - BERT tabanli node embedding'leri
 - Ensemble: CN + GCN hibrit skorlama
-- Hard negative mining
 """)
 
     st.success("""
