@@ -16,6 +16,10 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 from src.experiments.configs import ExperimentConfig, get_default_config, get_method_config
 from src.experiments.paths import PLOTS_DIR, RAW_RESULTS_DIR, ensure_result_dirs
 from src.experiments.progress import progress_bar

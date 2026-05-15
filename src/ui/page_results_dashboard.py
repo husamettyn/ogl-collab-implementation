@@ -9,6 +9,7 @@ import plotly.graph_objects as go
 
 from src.experiments.paths import PLOTS_DIR, RAW_RESULTS_DIR
 from src.experiments.results import load_results
+from src.experiments.tracking import get_benchmark_status
 from src.ui.common import require_streamlit
 from src.vis.tables import make_best_results_table, make_summary_table
 
@@ -151,6 +152,31 @@ def _build_loss_plot(selected_result: dict) -> go.Figure:
 def render_results_dashboard() -> None:
     """Render saved metrics with interactive Plotly charts."""
     st = require_streamlit()
+
+    # ── Live benchmark status ────────────────────────────────────────────
+    try:
+        bm_status = get_benchmark_status()
+        if bm_status.get("running_benchmarks"):
+            st.info(
+                f"▶ **Canli benchmark calisiyor** "
+                f"({len(bm_status['running_benchmarks'])} process)"
+            )
+            summary = bm_status.get("summary", {})
+            if summary:
+                prog_data = []
+                for key, val in summary.items():
+                    if val["runs"] > 0:
+                        prog_data.append({
+                            "Yontem": val["method"],
+                            "Scale": val["scale"],
+                            "Tamamlanan": val["runs"],
+                            "Ort. Hits@50": val["avg_hits@50"],
+                            "En Iyi Hits@50": val["max_hits@50"],
+                        })
+                if prog_data:
+                    st.dataframe(prog_data, use_container_width=True, hide_index=True)
+    except Exception:
+        pass
 
     results = load_results(RAW_RESULTS_DIR)
     if not results:

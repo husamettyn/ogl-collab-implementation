@@ -292,31 +292,27 @@ def _render_gcn_method() -> None:
 
     with col1:
         st.markdown("""
-### GCN v3 — Graph Convolutional Network
+### GCN — Graph Convolutional Network
 
 Graf yapisini **message passing** ile dogrudan kullanan GNN modeli.
 
 **Uc Bilesen:**
-1. **GCN Encoder (256 → 128):** Node feature → komsu agregasyonu → kompakt embedding
-2. **Residual + BatchNorm:** Gradient akisini saglar, derin aglari stabilize eder
-3. **Link Predictor (256 → 1):** concat(h_A, h_B) → shallow MLP → score
+1. **GCN Encoder:** Node feature → komsu agregasyonu → embedding
+2. **Hadamard Predictor:** h_A ⊙ h_B → MLP → score
+3. **Full-batch message passing**
 
-**Iylestirmeler (v2 → v3):**
-- Embedding 256'dan **128'e** indirildi (daha kompakt, daha hizli)
-- Predictor 3-layer'dan **2-layer'a** (daha az parametre, daha iyi genelleme)
-- **Hard negative mining** (%50 oraninda)
-- LR 0.001 → **0.005**, Dropout 0.1 → **0.2**
-- Val freq 20 → **10**, Patience 3 → **5**
+**Hiperparametreler:**
+- Hidden: 256, Layers: 3, Dropout: 0.2
+- LR: 0.005, Batch: 65K, Epochs: 200
 
-`h_A^(l+1) = σ( W·AGGREGATE({h_B : B∈N(A)}) + h_A^(l) )`
+`h_A^(l+1) = ReLU( W·AGGREGATE({h_B^(l) : B∈N(A)}) )`
 """)
 
     with col2:
         st.warning("""
 **Varsayilan Hiperparametreler:**
-- Hidden: 256, Embed: 128, Layers: 3
-- Dropout: 0.2, LR: 0.005
-- Batch: 65K, Epochs: 200
+- Hidden: 256, Layers: 3, Dropout: 0.2
+- LR: 0.005, Batch: 65K, Epochs: 200
 - Grad clipping: 1.0
 """)
 
@@ -357,11 +353,11 @@ def _render_conclusions() -> None:
     with findings_col1:
         st.markdown("### Bulgular")
         st.markdown("""
-1. **GCN v3 en yuksek performansi hedefliyor.** Embedding kompakligi ve hard negative mining ile CN'yi gecmesi bekleniyor.
+1. **GCN en yuksek ogrenme kapasitesine sahip.** Graf yapisini kullanarak node feature'larini zenginlestirir. Scale 1.0'da 0.455 Hits@50.
 
 2. **CN sasirtici derecede iyi baseline.** Hizli, egitimsiz, aciklanabilir. Ozellikle scale 1.0'da 0.515 Hits@50.
 
-3. **Scale arttikca performans artar.** Diminishing returns gozlenir.
+3. **Scale arttikca tum yontemlerin performansi artar.** Daha fazla train verisi = daha iyi genelleme.
 
 4. **MLP, GCN'den hizli ama daha dusuk performansli.** Feature-only, graf yapisini gormuyor.
 """)
@@ -381,8 +377,8 @@ def _render_conclusions() -> None:
     st.markdown("---")
     st.markdown("### Gelecek Calismalar")
     st.markdown("""
-- ~~GCN v3: embed_channels=128, hard negative mining~~ ✅
-- GCN v3 multi-seed test ve tuning
+- ~~GCN baseline calisiyor~~ ✅ (Hits@50=0.455)
+- ~~Multi-seed benchmark~~ 🔄 (calisiyor)
 - GAT, GraphSAGE, SEAL gibi gelismis GNN'ler
 - Edge weight ve year feature olarak kullanma
 - BERT tabanli node embedding'leri
