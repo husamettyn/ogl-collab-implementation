@@ -8,4 +8,5 @@ psutil
 streamlit
 matplotlib
 seaborn
+plotly
 tqdm

@@ -1,0 +1,12 @@
+{
+  "eval_id": 3,
+  "eval_name": "data-flow",
+  "prompt": "Trace the full data flow in this project — from loading datasets, through training, to evaluation. How does data move through the system?",
+  "assertions": [
+    "Report covers the data loading stage (mentions src/data/ or data loading code)",
+    "Report covers the training pipeline (mentions src/train.py or training code)",
+    "Report covers the evaluation stage (mentions src/evaluation/ or evaluation code)",
+    "Report connects the stages into a coherent end-to-end flow",
+    "Every finding includes a file path and line number citation"
+  ]
+}

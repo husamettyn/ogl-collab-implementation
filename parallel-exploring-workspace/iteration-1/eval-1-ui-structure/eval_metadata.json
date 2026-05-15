@@ -1,0 +1,12 @@
+{
+  "eval_id": 1,
+  "eval_name": "ui-structure",
+  "prompt": "How does the UI work in this project? I see there's a Streamlit app but I want to understand all the pages, how navigation works, and what each page does.",
+  "assertions": [
+    "Report mentions src/ui/app.py as the main entry point",
+    "Report mentions src/ui/pages.py for navigation/pages module",
+    "Report identifies at least 4 distinct UI page files",
+    "Report explains how page navigation/registration works",
+    "Every finding includes a file path and line number citation"
+  ]
+}

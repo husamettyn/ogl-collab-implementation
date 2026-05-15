@@ -1,0 +1,11 @@
+{
+  "eval_id": 2,
+  "eval_name": "ml-methods",
+  "prompt": "What ML methods are implemented in this repo? I need to understand each algorithm, how they're configured, and where they're defined.",
+  "assertions": [
+    "Report mentions ML method files under src/methods/",
+    "Report describes what each method does (not just listing names)",
+    "Every finding includes a file path and line number citation",
+    "Report references at least 3 distinct method implementation files"
+  ]
+}

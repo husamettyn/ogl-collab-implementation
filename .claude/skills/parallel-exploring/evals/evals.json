@@ -1,0 +1,43 @@
+{
+  "skill_name": "parallel-exploring",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "How does the UI work in this project? I see there's a Streamlit app but I want to understand all the pages, how navigation works, and what each page does.",
+      "expected_output": "A report covering the Streamlit UI structure: the main app entry point, the pages module, each page's purpose, and how navigation is wired together. Should cite specific files under src/ui/ and key functions.",
+      "files": [],
+      "expectations": [
+        "Report mentions src/ui/app.py as the main entry point",
+        "Report mentions src/ui/pages.py for navigation/pages module",
+        "Report identifies at least 4 distinct UI page files",
+        "Report explains how page navigation/registration works",
+        "Every finding includes a file path and line number citation"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "What ML methods are implemented in this repo? I need to understand each algorithm, how they're configured, and where they're defined.",
+      "expected_output": "A report identifying each ML method (GCN, MLP, Common Neighbors, etc.), their file locations, key classes/functions, and how they fit into the project. Should cite src/methods/ files.",
+      "files": [],
+      "expectations": [
+        "Report mentions ML method files under src/methods/",
+        "Report describes what each method does (not just listing names)",
+        "Every finding includes a file path and line number citation",
+        "Report references at least 3 distinct method implementation files"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Trace the full data flow in this project — from loading datasets, through training, to evaluation. How does data move through the system?",
+      "expected_output": "A report tracing data flow end-to-end: how datasets are loaded (src/data/), how training works (src/train.py), how evaluation runs (src/evaluation/), and how results are presented. Should connect the pipeline stages.",
+      "files": [],
+      "expectations": [
+        "Report covers the data loading stage (mentions src/data/ or data loading code)",
+        "Report covers the training pipeline (mentions src/train.py or training code)",
+        "Report covers the evaluation stage (mentions src/evaluation/ or evaluation code)",
+        "Report connects the stages into a coherent end-to-end flow",
+        "Every finding includes a file path and line number citation"
+      ]
+    }
+  ]
+}
