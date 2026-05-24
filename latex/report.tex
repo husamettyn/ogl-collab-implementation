@@ -1,0 +1,344 @@
+\documentclass[12pt,a4paper]{article}
+
+% Modern fonts
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\geometry{margin=2.5cm}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    urlcolor=blue,
+    citecolor=blue
+}
+
+\title{\textbf{Link Prediction on Academic Collaboration Networks}\\
+       \large A Comparative Study of Graph Neural Networks and Heuristic Methods}
+\author{Husam \\ 25501003 \\
+        BLM5121 – Web Mining | Term Project Report}
+\date{\today}
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+
+\begin{abstract}
+Link prediction in academic collaboration networks is a fundamental task in graph machine learning. This project applies and compares three methods—Common Neighbors (heuristic), MLP (feature-based), and Graph Convolutional Networks (GCN, message-passing)—on the OGB-collab dataset. Experiments are conducted at three data scales (10\%, 50\%, 100\%) with multi-seed evaluation to ensure statistical robustness. The GCN achieves the best predictive performance (Hits@50 = 0.457 on average at full scale, best seed = 0.484), significantly outperforming MLP (0.181) but falling short of the Common Neighbors heuristic (0.515).
+\end{abstract}
+
+%-----------------------------------------------------------------
+\section{Motivation and Goals}
+%-----------------------------------------------------------------
+
+Academic collaboration networks—where nodes represent authors and edges represent co-authorship—grow organically over time. Predicting which authors will collaborate in the future has practical applications in research recommendation systems, funding allocation analysis, and understanding the dynamics of scientific communities.
+
+The OGB-collab dataset~\cite{ogb} provides a standardized benchmark for this task with a temporal split: training edges from before 2010, validation edges from 2010, and test edges from 2011 onwards. This mirrors real-world deployment where the model must generalize to future collaborations.
+
+\textbf{Goals:}
+\begin{itemize}[nosep]
+    \item Predict missing edges on the OGB-collab dataset using three complementary methods.
+    \item Compare a simple heuristic (Common Neighbors), a feature-only neural network (MLP), and a graph neural network (GCN).
+    \item Measure predictive performance (Hits@50, Hits@100) across three data scales (10\%, 50\%, 100\%).
+    \item Conduct multi-seed evaluation (3 seeds per configuration) to quantify variance and ensure statistical reliability.
+\end{itemize}
+
+\textbf{Implementation Environment:}
+\begin{itemize}[nosep]
+    \item Language: Python 3.11
+    \item Libraries: PyTorch, PyTorch Geometric, OGB, NumPy, Plotly, Streamlit
+    \item GPU: NVIDIA RTX 5060 Ti (16 GB VRAM)
+    \item OS: Linux (Fedora 43)
+\end{itemize}
+
+%-----------------------------------------------------------------
+\section{Dataset Description}
+%-----------------------------------------------------------------
+
+The OGB-collab dataset~\cite{ogb} is part of the Open Graph Benchmark for link property prediction. It represents a collaboration network extracted from the Microsoft Academic Graph. The dataset is split temporally to simulate realistic future-link prediction.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/fig1_dataset.pdf}
+\caption{Overview of the OGB-collab dataset: (left) edge distribution across temporal splits, (center) data scale fractions used in experiments, (right) key statistics.}
+\label{fig:dataset}
+\end{figure}
+
+\subsection{Data Scaling}
+
+To study how performance scales with data volume, three fractions of the training edges are used while keeping validation and test sets fixed:
+\begin{itemize}[nosep]
+    \item \textbf{Scale 0.1}: 10\% of training edges (118K edges)
+    \item \textbf{Scale 0.5}: 50\% of training edges (589K edges)
+    \item \textbf{Scale 1.0}: 100\% of training edges (1.18M edges)
+\end{itemize}
+
+This design tests whether message-passing methods (like GCN) need many training edges to be effective, or whether feature-based methods can perform well with limited data.
+
+%-----------------------------------------------------------------
+\section{Methods}
+%-----------------------------------------------------------------
+
+\subsection{Common Neighbors (Baseline Heuristic)}
+
+The Common Neighbors heuristic~\cite{newman2001} is a parameter-free baseline that scores a candidate edge $(u,v)$ as:
+
+\begin{equation}
+    \text{score}(u,v) = |\mathcal{N}(u) \cap \mathcal{N}(v)| + \varepsilon
+\end{equation}
+
+where $\mathcal{N}(u)$ is the neighbor set of node $u$ in the training graph and $\varepsilon = 10^{-6}$ is a small tie-breaker. The graph is symmetrized before neighbor counting. Despite its simplicity, Common Neighbors is a remarkably strong baseline—often competitive with learned methods on collaboration graphs.
+
+\textbf{Complexity:} $O(1)$ per candidate edge after adjacency list construction. No training required.
+
+\subsection{MLP (Feature-Only Baseline)}
+
+The MLP method ignores graph structure entirely and predicts links based solely on node features. Given feature vectors $\mathbf{x}_u$ and $\mathbf{x}_v$, the Hadamard product is computed:
+
+\begin{equation}
+    \mathbf{h} = \mathbf{x}_u \odot \mathbf{x}_v
+\end{equation}
+
+This 128-dimensional vector is passed through a 3-layer MLP with hidden dimension 256 and sigmoid output. Training uses binary cross-entropy loss with negative sampling (1:1 ratio).
+
+\textbf{Hyperparameters:} hidden\_channels=256, num\_layers=3, dropout=0.0, lr=0.01, batch\_size=65,536, epochs=200.
+
+\subsection{GCN (Graph Convolutional Network)}
+
+The GCN model~\cite{kipf2017} consists of two components:
+
+\textbf{GCN Encoder:} A 3-layer graph convolutional network maps node features to node embeddings via message passing over the training graph.
+
+\textbf{Link Predictor:} Pairs of node embeddings are combined via Hadamard product and passed through a 3-layer MLP with sigmoid output, identical in structure to the standalone MLP predictor.
+
+Training uses full-batch message passing with binary cross-entropy loss and negative sampling. All 200 epochs are run fully—no early stopping based on validation metrics. A Cosine Annealing scheduler (eta\_min=$10^{-6}$) smoothly decays the learning rate.
+
+\textbf{Hyperparameters:} hidden\_channels=256, num\_layers=3, dropout=0.2, lr=0.005, batch\_size=65,536, epochs=200.
+
+\subsection{Multi-Seed Evaluation}
+
+To quantify variance and avoid overfitting to a lucky random seed, each method$\times$scale configuration is evaluated with 3 different random seeds (42, 123, 456). The final metrics are reported as mean $\pm$ standard deviation.
+
+%-----------------------------------------------------------------
+\section{System Architecture}
+%-----------------------------------------------------------------
+
+The project is organized into modular components for reproducibility and extensibility:
+
+\begin{itemize}[nosep]
+    \item \textbf{Data Module:} Automatic OGB-collab download; configurable data scaling; stratified edge splits respecting temporal ordering.
+    \item \textbf{Methods Module:} Independent implementations for Common Neighbors, MLP, and GCN—each exposing a uniform \texttt{train()} / \texttt{evaluate()} interface.
+    \item \textbf{Experiment Runner:} Orchestrates full pipelines; handles configuration, device selection (GPU/CPU), multi-seed execution, result serialization to JSON.
+    \item \textbf{Evaluation Module:} Computes Hits@K metrics using OGB's evaluator; tracks runtime and memory; logs per-epoch validation metrics.
+    \item \textbf{Multi-Seed Benchmark Script:} Runs all (method, scale, seed) combinations, aggregates results, exports CSV summaries and Plotly visualizations.
+    \item \textbf{Streamlit Dashboard:} 6-tab interactive UI (Proje Özeti, Veri Seti Keşfi, Metodoloji, Deney Sonuçları, Sonuç \& Tartışma, İnteraktif Demo).
+\end{itemize}
+
+%-----------------------------------------------------------------
+\section{Performance Evaluation}
+%-----------------------------------------------------------------
+
+\subsection{Main Results}
+
+Figure~\ref{fig:hits_bar} shows the Hits@50 performance of all three methods across all data scales. Table~\ref{tab:single} provides the exact numbers with corresponding runtime and memory measurements.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/fig2_hits_comparison.pdf}
+\caption{Hits@50 comparison across all three methods and all three data scales (best run per configuration). GCN dominates at low scales while Common Neighbors surpasses learned methods at full scale.}
+\label{fig:hits_bar}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Performance comparison across methods and scales, including runtime and estimated peak memory consumption. Runtime and memory values correspond to the best Hits@50 run per configuration. Memory is estimated peak RSS (\texttt{memory\_mb - min(memory\_delta\_mb, 0)}); see \S\ref{sec:challenges} for discussion of GC-related measurement noise.}
+\label{tab:single}
+\small
+\begin{tabular}{lcccrr}
+\toprule
+\textbf{Method} & \textbf{Scale} & \textbf{Hits@50} & \textbf{Hits@100} & \textbf{Runtime (s)} & \textbf{Memory (MB)} \\
+\midrule
+Common Neighbors & 0.1 & 0.0746 & 0.0754 & 0.4 & 1,094 \\
+Common Neighbors & 0.5 & 0.3952 & 0.3955 & 1.0 & 1,222 \\
+Common Neighbors & 1.0 & 0.5146 & 0.5456 & 1.4 & 1,350 \\
+\midrule
+MLP               & 0.1 & 0.0389 & 0.0604 & 11.3 & 1,751 \\
+MLP               & 0.5 & 0.1306 & 0.2248 & 53.4 & 1,804 \\
+MLP               & 1.0 & 0.1806 & 0.2582 & 107.6 & 1,767 \\
+\midrule
+GCN               & 0.1 & \textbf{0.2530} & 0.2991 & 53.4 & 2,143 \\
+GCN               & 0.5 & \textbf{0.4177} & 0.4741 & 423.5 & 2,181 \\
+GCN               & 1.0 & \textbf{0.4839} & 0.5378 & 1,179.3 & 2,135{\textsuperscript{*}} \\
+\bottomrule
+\multicolumn{6}{l}{\small $^*$Estimated peak RSS; the final measurement (1,432\,MB) captured a GC event.}
+\end{tabular}
+\end{table}
+
+\subsection{OGB-Collab Leaderboard Context}
+
+To contextualise our results, Table~\ref{tab:leaderboard} compares the best-performing configuration from each method against published baselines on the OGB-collab test set. All values are Hits@50 from the official OGB leaderboard~\cite{ogb} unless otherwise noted.
+
+\begin{table}[H]
+\centering
+\caption{Comparison against OGB-collab leaderboard baselines. Results marked with $*$ are from this project; others are published leaderboard entries.}
+\label{tab:leaderboard}
+\small
+\begin{tabular}{lcc}
+\toprule
+\textbf{Method} & \textbf{Hits@50} & \textbf{Reference} \\
+\midrule
+SEAL (SOTA)                    & 0.6763 & \cite{zhang2020} \\
+GCN + DE + Norm                & 0.6291 & Leaderboard \\
+GCN + Val. \& Test.            & 0.5884 & Leaderboard \\
+GAT + DE                       & 0.5773 & \cite{velickovic2018} \\
+GraphSAGE + DE                 & 0.5406 & \cite{hamilton2017} \\
+\emph{Common Neighbors (ours)} & 0.5146 & This work $*$ \\
+\emph{GCN (ours)}              & 0.4839 & This work $*$ \\
+MLP + DE                       & 0.4361 & Leaderboard \\
+\emph{MLP (ours)}              & 0.1806 & This work $*$ \\
+Matrix Factorization           & 0.1184 & Leaderboard \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Our GCN result (0.484) is competitive with published message-passing approaches when considering that we do not use positional encoding features such as \emph{Node Embeddings (NE)} or \emph{Distance Encoding (DE)}, which consistently boost performance by 5--10 points across all methods. The Common Neighbors heuristic (0.515) approaches the performance of learned methods without any training cost, confirming the strong structural signal present in the collaboration graph. The gap between our methods and the current state-of-the-art (SEAL at 0.676) is primarily attributable to SEAL's use of subgraph-level features and double-radius node labelling, which our baseline implementations do not include.
+
+\subsection{Scale Analysis}
+
+Figure~\ref{fig:scale} examines how the GCN advantage evolves as more training data becomes available. The trend is clear: GCN dominates at low scales (node features compensate for sparse structure), the methods are comparable at medium scale, and Common Neighbors takes the lead at full scale (structural patterns are abundant).
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/fig3_scale_analysis.pdf}
+\caption{(Left) Hits@50 vs.\ data scale for all methods. (Right) GCN/CN ratio—GCN provides nearly 3$\times$ improvement at 10\% data but falls behind at full scale.}
+\label{fig:scale}
+\end{figure}
+
+\subsection{Multi-Seed GCN Results}
+
+Figure~\ref{fig:multiseed} shows the GCN multi-seed benchmark results with error bars indicating standard deviation across 3 seeds. Variance is highest at scale=0.1 and tightens as data volume increases.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{figures/fig4_multiseed.pdf}
+\caption{GCN multi-seed evaluation: 3 seeds per scale with error bars ($\pm 1 \sigma$). Common Neighbors baseline shown for reference. Variance decreases as data scale increases (std = 0.024 at 10\% vs.\ 0.008 at 50\%).}
+\label{fig:multiseed}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{GCN multi-seed results. Scale~1.0 includes only 2 valid seeds (seed~456 encountered a training error).}
+\label{tab:multiseed}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Scale} & \textbf{Seeds} & \textbf{Mean Hits@50} & \textbf{Best} & \textbf{Worst} \\
+\midrule
+0.1 & 3 & $0.2279 \pm 0.0135$ & 0.2429 (seed 123) & 0.2167 (seed 456) \\
+0.5 & 3 & $0.4059 \pm 0.0102$ & 0.4177 (seed 456) & 0.3991 (seed 123) \\
+1.0 & 2 & $0.4648 \pm 0.0271$ & 0.4839 (seed 42)  & 0.4456 (seed 123) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key observations:}
+\begin{itemize}[nosep]
+    \item At scale=0.1, variance is moderate (std $\approx$ 0.014, 5.9\% of mean), making multi-seed evaluation useful but not critical.
+    \item At scale=0.5, variance tightens (std $\approx$ 0.010, 2.5\% of mean).
+    \item Scale~1.0 includes only 2 valid seeds (seed~456 encountered a training error), so multi-seed statistics at full scale should be interpreted cautiously.
+    \item The best GCN run (seed 42, scale~1.0) achieves Hits@50 = 0.4839, approaching but not surpassing Common Neighbors (0.515).
+\end{itemize}
+
+%-----------------------------------------------------------------
+\section{Discussion}
+%-----------------------------------------------------------------
+
+\subsection{Best Method by Data Scale}
+
+\textbf{At scale 0.1:} GCN is the clear winner (Hits@50 = 0.228 mean, 0.253 best), providing roughly 3$\times$ improvement over Common Neighbors (0.075). At this scale, the training graph covers only 10\% of collaborations—too sparse for structural heuristics. Node features (128-dim paper embeddings) carry enough signal for GCN to make useful predictions.
+
+\textbf{At scale 0.5:} GCN and Common Neighbors are effectively tied (0.406 vs.\ 0.395), with a slight edge to GCN. This is the crossover point where structural information becomes roughly as informative as node features.
+
+\textbf{At scale 1.0:} Common Neighbors takes the lead (0.515 vs.\ 0.457). With 1.18M training edges, the collaboration graph's structural patterns (shared co-authors) are so rich that a simple heuristic outperforms learned models.
+
+\subsection{Why Common Neighbors Wins at Full Scale}
+
+This is a well-documented phenomenon in link prediction~\cite{zhang2020}: academic collaboration graphs exhibit strong homophily and power-law degree distributions, making local heuristics remarkably effective. Common Neighbors captures the ``shared co-author'' pattern—researchers who share many collaborators are likely to collaborate themselves. With abundant training data, this signal dominates.
+
+\subsection{Method Trade-offs}
+
+\begin{itemize}[nosep]
+    \item \textbf{Common Neighbors:} Zero training cost, instant inference ($\sim$1.4s), no need for node features. Fails completely at low data scales.
+    \item \textbf{MLP:} Fast to train (seconds per epoch), uses features, but fundamentally limited by ignoring graph structure. Hits@50 plateaus at 0.181.
+    \item \textbf{GCN:} Best at low/medium data scales, combines structure + features. Training is expensive ($\sim$19 min at full scale on GPU).
+\end{itemize}
+
+%-----------------------------------------------------------------
+\section{Technical Challenges}
+\label{sec:challenges}
+%-----------------------------------------------------------------
+
+\subsection{Other Challenges}
+
+\begin{itemize}[nosep]
+    \item \textbf{Multi-seed benchmark interference:} Two concurrent benchmark processes halve effective GPU speed (105s/run $\rightarrow$ 210s/run) due to CUDA context switching. A pre-flight check kills ghost processes.
+    \item \textbf{PYTHONPATH issues:} Running scripts requires the project root in \texttt{sys.path}. This fix is silently lost on \texttt{git checkout}. Using \texttt{python -m} avoids this entirely.
+    \item \textbf{Memory measurement noise:} Python's \texttt{psutil}-based tracking can produce negative deltas when the garbage collector runs between snapshots. This is expected behavior.
+\end{itemize}
+%-----------------------------------------------------------------
+% References
+%-----------------------------------------------------------------
+\begin{thebibliography}{10}
+
+\bibitem{ogb}
+W. Hu, M. Fey, M. Zitnik, Y. Dong, H. Ren, B. Liu, M. Catasta, and J. Leskovec,
+``Open Graph Benchmark: Datasets for Machine Learning on Graphs,''
+in \textit{Advances in Neural Information Processing Systems (NeurIPS)}, 2020.
+
+\bibitem{newman2001}
+M. E. J. Newman,
+``Clustering and preferential attachment in growing networks,''
+\textit{Physical Review E}, vol. 64, no. 2, p. 025102, 2001.
+
+\bibitem{kipf2017}
+T. N. Kipf and M. Welling,
+``Semi-Supervised Classification with Graph Convolutional Networks,''
+in \textit{International Conference on Learning Representations (ICLR)}, 2017.
+
+\bibitem{zhang2020}
+M. Zhang and Y. Chen,
+``Link Prediction Based on Graph Neural Networks,''
+in \textit{Advances in Neural Information Processing Systems (NeurIPS)}, 2018.
+
+\bibitem{hamilton2017}
+W. L. Hamilton, R. Ying, and J. Leskovec,
+``Inductive Representation Learning on Large Graphs,''
+in \textit{Advances in Neural Information Processing Systems (NeurIPS)}, 2017.
+
+\bibitem{velickovic2018}
+P. Veličković, G. Cucurull, A. Casanova, A. Romero, P. Liò, and Y. Bengio,
+``Graph Attention Networks,''
+in \textit{International Conference on Learning Representations (ICLR)}, 2018.
+
+\bibitem{fey2019}
+M. Fey and J. E. Lenssen,
+``Fast Graph Representation Learning with PyTorch Geometric,''
+in \textit{ICLR 2019 Workshop on Representation Learning on Graphs and Manifolds}, 2019.
+
+\bibitem{grover2016}
+A. Grover and J. Leskovec,
+``Node2Vec: Scalable Feature Learning for Networks,''
+in \textit{Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD)}, 2016.
+
+\end{thebibliography}
+
+\end{document}

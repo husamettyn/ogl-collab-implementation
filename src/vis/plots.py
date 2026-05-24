@@ -252,7 +252,7 @@ def plot_runtime_vs_accuracy(
         template="plotly_white",
         height=400,
     )
-    fig.update_traces(marker=dict(sizemin=8, sizemax=20))
+    fig.update_traces(marker=dict(sizemin=8))
     ensure_result_dirs()
     fig.write_image(Path(output_path), scale=2)
     return Path(output_path)

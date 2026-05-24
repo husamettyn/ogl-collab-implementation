@@ -108,4 +108,4 @@ Rules: every code claim gets a path (+ line); most important findings first; fla
 
 ## Additional resources
 
-- Eval scenarios for this repo: [evals/evals.json](evals/evals.json)
+- Eval scenarios for this repo: [.claude/skills/parallel-exploring/evals/evals.json](.claude/skills/parallel-exploring/evals/evals.json)
