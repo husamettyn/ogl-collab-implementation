@@ -16,7 +16,7 @@ src/experiments/runner.py::run_experiment(config)
         ├── 2. src/data/preprocessing.py::make_scaled_split()
         │         └── deterministic torch.randperm with seeded generator
         │
-        ├── 3. _run_method() dispatches to:
+        ├── 3. _run_method() dispatches to:00EE-80F4
         │         ├── src/methods/common_neighbors.py (no training needed)
         │         ├── src/methods/mlp.py (feature-only, no graph structure)
         │         └── src/methods/gcn.py (graph neural network)

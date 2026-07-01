@@ -1,11 +1,14 @@
 # ogbl-collab Link Prediction
 
-This project compares **Common Neighbors**, **MLP**, and **GCN** methods on the
-`ogbl-collab` link prediction benchmark (235,868 nodes, 128-dim features,
-1,285,465 edges spanning 2005–2020).
+This project compares **Common Neighbors** (heuristic), **MLP** (feature neural
+network), and **GCN** (graph convolutional network) on the `ogbl-collab` link
+prediction benchmark (235,868 nodes, 128-dim features, 1,285,465 edges spanning
+2005–2020).
 
-The implementation is independent from the local `ogb/` GitHub source tree.
-Runtime code uses the installed `ogb` package APIs.
+Experiments run at **3 data scales** (10%, 50%, 100%) with **multi-seed
+evaluation** (seeds 42, 123, 456) for statistical robustness.  The project
+includes a **7-tab Streamlit dashboard** (Turkish UI), a full **LaTeX report**
+with TikZ architecture diagram, and an **all-methods comparison runner**.
 
 ---
 
@@ -19,7 +22,7 @@ source .venv/bin/activate
 uv pip install -r requirements.txt
 ```
 
-You can also run commands without activating:
+You can also run commands without activating:ilk sayfada 
 
 ```bash
 uv run python src/train.py --help
@@ -125,9 +128,9 @@ Output includes:
 | Step | Output | Location |
 |------|--------|----------|
 | `main.py assets` | `summary.csv` (flattened results) | `results/raw/summary.csv` |
-| `main.py assets` | 7 Plotly PNGs (hits, heatmap, runtime, memory, scatter, training curves, multi-seed) | `results/plots/` |
+| `main.py assets` | 8 Plotly PNGs (hits, heatmap, runtime, memory, scatter, training curves, multi-seed, **ROC curves**) | `results/plots/` |
 | `latex/gen_plots.py` | 4 PDF figures (dataset overview, Hits@50 bars, scale analysis, multi-seed) | `latex/figures/` |
-| `scripts/generate_latex_tables.py` | 3 LaTeX `tabular` environments (main results, multi-seed, runtime) | stdout |
+| `scripts/generate_latex_tables.py` | 3 LaTeX `tabular` environments (main results, multi-seed, runtime) + **significance tables** | stdout |
 
 ### Plot reference
 
@@ -136,7 +139,7 @@ of each plot file to its generating function.
 
 ---
 
-## Dashboard
+## Dashboard (Turkish UI)
 
 Launch the Streamlit dashboard with:
 
@@ -144,13 +147,27 @@ Launch the Streamlit dashboard with:
 streamlit run src/dash.py
 ```
 
-The dashboard includes:
+The dashboard includes **3 tabs** (all in Turkish):
 
-- **Graph Explorer** — graph-level dataset visuals (sampled subgraph, degree
-  distribution, split composition, feature analysis)
-- **Algorithm Runner** — preset and method-aware parameter controls
-- **Results Dashboard** — filtering, KPI cards, best-per-method summaries,
-  interactive Plotly charts, and optional loss-curve inspection
+1. **Veri Seti Keşfi** — Dataset exploration + interactive graph visualizer:
+   hero cards (nodes, edges, feature dim, year range, avg degree), split
+   composition pie, edge weight distribution, year trend, degree distribution
+   (log-log), top authors bar, feature magnitude histogram, and a 2D interactive
+   graph canvas with node coloring, degree filtering, and edge display modes.
+
+2. **Algoritma Çalıştırıcı** — Algorithm runner with two modes:
+   - **Single Method**: run Common Neighbors, MLP, or GCN individually with
+     configurable hyperparameters.
+   - **All Three Methods (Comparison)**: run all three methods sequentially and
+     view a side-by-side comparison table (Hits@50/100, runtime, memory).
+
+3. **Sonuçlar** — Experiment results: live benchmark status, filters
+   (method/split/status/scale/seed), KPI cards, grouped bar chart, scale trend
+   line chart, runtime bar chart, results table, best results per method, loss
+   curve viewer, and static plot fallback.
+
+> **Note:** The full results pipeline is also accessible via CLI — see
+> [Run Experiments](#run-experiments) and [Visualization Pipeline](#visualization-pipeline).
 
 ---
 
@@ -176,7 +193,7 @@ python scripts/generate_latex_tables.py --table all # LaTeX tables (copy into re
 
 1. Add the plotting function in [`src/vis/plots.py`](src/vis/plots.py) (Plotly) or
    [`latex/gen_plots.py`](latex/gen_plots.py) (Matplotlib PDF).
-2. Register it in [`save_all_plots()`](src/vis/plots.py:414) for the Plotly track.
+2. Register it in [`save_all_plots()`](src/vis/plots.py:525) for the Plotly track.
 3. Add its entry to the plot reference in [`results/plots/README.md`](results/plots/README.md).
 4. Reference it in [`latex/report.tex`](latex/report.tex) with `\includegraphics`.
 
@@ -199,7 +216,7 @@ python scripts/generate_latex_tables.py --table all # LaTeX tables (copy into re
 │   ├── dash.py              # Streamlit dashboard entry point
 │   ├── data/                # Dataset loading & preprocessing
 │   ├── methods/             # Common Neighbors, MLP, GCN implementations
-│   ├── evaluation/          # Metrics (Hits@K) & runtime/memory measurement
+│   ├── evaluation/          # Metrics (Hits@K), runtime/memory, significance tests
 │   ├── experiments/         # Runner, configs, results persistence, tuning
 │   ├── ui/                  # Streamlit pages (explorer, runner, dashboard)
 │   └── vis/                 # Plotly plotting functions & table helpers

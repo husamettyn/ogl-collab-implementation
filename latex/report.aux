@@ -14,47 +14,40 @@
 \providecommand\HyField@AuxAddToFields[1]{}
 \providecommand\HyField@AuxAddToCoFields[2]{}
 \citation{ogb}
-\@writefile{toc}{\contentsline {section}{\numberline {1}Motivation and Goals}{1}{section.1}\protected@file@percent }
 \citation{ogb}
 \citation{newman2001}
-\@writefile{toc}{\contentsline {section}{\numberline {2}Dataset Description}{2}{section.2}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Overview of the OGB-collab dataset: (left) edge distribution across temporal splits, (center) data scale fractions used in experiments, (right) key statistics.\relax }}{2}{figure.caption.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {1}Motivation and Goals}{1}{section.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2}Dataset Description}{1}{section.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Overview of the OGB-collab dataset: edge distribution across temporal splits, data scale fractions, and key statistics.\relax }}{1}{figure.caption.1}\protected@file@percent }
 \providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
-\newlabel{fig:dataset}{{1}{2}{Overview of the OGB-collab dataset: (left) edge distribution across temporal splits, (center) data scale fractions used in experiments, (right) key statistics.\relax }{figure.caption.1}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Data Scaling}{2}{subsection.2.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {3}Methods}{2}{section.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Common Neighbors (Baseline Heuristic)}{2}{subsection.3.1}\protected@file@percent }
+\newlabel{fig:dataset}{{1}{1}{Overview of the OGB-collab dataset: edge distribution across temporal splits, data scale fractions, and key statistics.\relax }{figure.caption.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {3}Methods}{1}{section.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Common Neighbors (Baseline Heuristic)}{1}{subsection.3.1}\protected@file@percent }
 \citation{kipf2017}
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}MLP (Feature-Only Baseline)}{3}{subsection.3.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}GCN (Graph Convolutional Network)}{3}{subsection.3.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Multi-Seed Evaluation}{3}{subsection.3.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {4}System Architecture}{3}{section.4}\protected@file@percent }
-\citation{ogb}
-\@writefile{toc}{\contentsline {section}{\numberline {5}Performance Evaluation}{4}{section.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Main Results}{4}{subsection.5.1}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Hits@50 comparison across all three methods and all three data scales (best run per configuration). GCN dominates at low scales while Common Neighbors surpasses learned methods at full scale.\relax }}{4}{figure.caption.2}\protected@file@percent }
-\newlabel{fig:hits_bar}{{2}{4}{Hits@50 comparison across all three methods and all three data scales (best run per configuration). GCN dominates at low scales while Common Neighbors surpasses learned methods at full scale.\relax }{figure.caption.2}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Performance comparison across methods and scales, including runtime and estimated peak memory consumption. Runtime and memory values correspond to the best Hits@50 run per configuration. Memory is estimated peak RSS (\texttt  {memory\_mb - min(memory\_delta\_mb, 0)}); see \S  \ref {sec:challenges} for discussion of GC-related measurement noise.\relax }}{4}{table.caption.3}\protected@file@percent }
-\newlabel{tab:single}{{1}{4}{Performance comparison across methods and scales, including runtime and estimated peak memory consumption. Runtime and memory values correspond to the best Hits@50 run per configuration. Memory is estimated peak RSS (\texttt {memory\_mb - min(memory\_delta\_mb, 0)}); see \S \ref {sec:challenges} for discussion of GC-related measurement noise.\relax }{table.caption.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}MLP (Feature-Only Baseline)}{2}{subsection.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}GCN (Graph Convolutional Network)}{2}{subsection.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4}System Architecture}{2}{section.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}Performance Evaluation}{2}{section.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Main Results}{2}{subsection.5.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Hits@50 comparison across methods and data scales. GCN dominates at low and medium scales; Common Neighbors leads at full scale.\relax }}{2}{figure.caption.2}\protected@file@percent }
+\newlabel{fig:hits_bar}{{2}{2}{Hits@50 comparison across methods and data scales. GCN dominates at low and medium scales; Common Neighbors leads at full scale.\relax }{figure.caption.2}{}}
 \citation{zhang2020}
 \citation{velickovic2018}
 \citation{hamilton2017}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}OGB-Collab Leaderboard Context}{5}{subsection.5.2}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Comparison against OGB-collab leaderboard baselines. Results marked with $*$ are from this project; others are published leaderboard entries.\relax }}{5}{table.caption.4}\protected@file@percent }
-\newlabel{tab:leaderboard}{{2}{5}{Comparison against OGB-collab leaderboard baselines. Results marked with $*$ are from this project; others are published leaderboard entries.\relax }{table.caption.4}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Scale Analysis}{5}{subsection.5.3}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces (Left) Hits@50 vs.\ data scale for all methods. (Right) GCN/CN ratio—GCN provides nearly 3$\times $ improvement at 10\% data but falls behind at full scale.\relax }}{6}{figure.caption.5}\protected@file@percent }
-\newlabel{fig:scale}{{3}{6}{(Left) Hits@50 vs.\ data scale for all methods. (Right) GCN/CN ratio—GCN provides nearly 3$\times $ improvement at 10\% data but falls behind at full scale.\relax }{figure.caption.5}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}Multi-Seed GCN Results}{6}{subsection.5.4}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces GCN multi-seed evaluation: 3 seeds per scale with error bars ($\pm 1 \sigma $). Common Neighbors baseline shown for reference. Variance decreases as data scale increases (std = 0.024 at 10\% vs.\ 0.008 at 50\%).\relax }}{6}{figure.caption.6}\protected@file@percent }
-\newlabel{fig:multiseed}{{4}{6}{GCN multi-seed evaluation: 3 seeds per scale with error bars ($\pm 1 \sigma $). Common Neighbors baseline shown for reference. Variance decreases as data scale increases (std = 0.024 at 10\% vs.\ 0.008 at 50\%).\relax }{figure.caption.6}{}}
-\citation{zhang2020}
-\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces GCN multi-seed results. Scale\nobreakspace  {}1.0 includes only 2 valid seeds (seed\nobreakspace  {}456 encountered a training error).\relax }}{7}{table.caption.7}\protected@file@percent }
-\newlabel{tab:multiseed}{{3}{7}{GCN multi-seed results. Scale~1.0 includes only 2 valid seeds (seed~456 encountered a training error).\relax }{table.caption.7}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {6}Discussion}{7}{section.6}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Best Method by Data Scale}{7}{subsection.6.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Why Common Neighbors Wins at Full Scale}{7}{subsection.6.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.3}Method Trade-offs}{7}{subsection.6.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Performance comparison (3-seed averages $\pm $ std).\relax }}{3}{table.caption.3}\protected@file@percent }
+\newlabel{tab:single}{{1}{3}{Performance comparison (3-seed averages $\pm $ std).\relax }{table.caption.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Leaderboard Context}{3}{subsection.5.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Comparison against OGB-collab leaderboard. * = this work.\relax }}{3}{table.caption.4}\protected@file@percent }
+\newlabel{tab:leaderboard}{{2}{3}{Comparison against OGB-collab leaderboard. * = this work.\relax }{table.caption.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Scale Analysis}{3}{subsection.5.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces (Left) Hits@50 vs.\ data scale. (Right) GCN/CN ratio.\relax }}{3}{figure.caption.5}\protected@file@percent }
+\newlabel{fig:scale}{{3}{3}{(Left) Hits@50 vs.\ data scale. (Right) GCN/CN ratio.\relax }{figure.caption.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}Multi-Seed Results}{4}{subsection.5.4}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Multi-seed evaluation with error bars ($\pm 1 \sigma $).\relax }}{4}{figure.caption.6}\protected@file@percent }
+\newlabel{fig:multiseed}{{4}{4}{Multi-seed evaluation with error bars ($\pm 1 \sigma $).\relax }{figure.caption.6}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Multi-seed results (3 seeds per configuration).\relax }}{4}{table.caption.7}\protected@file@percent }
+\newlabel{tab:multiseed}{{3}{4}{Multi-seed results (3 seeds per configuration).\relax }{table.caption.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.5}Statistical Significance}{4}{subsection.5.5}\protected@file@percent }
 \bibcite{ogb}{1}
 \bibcite{newman2001}{2}
 \bibcite{kipf2017}{3}
@@ -63,7 +56,14 @@
 \bibcite{velickovic2018}{6}
 \bibcite{fey2019}{7}
 \bibcite{grover2016}{8}
-\@writefile{toc}{\contentsline {section}{\numberline {7}Technical Challenges}{8}{section.7}\protected@file@percent }
-\newlabel{sec:challenges}{{7}{8}{Technical Challenges}{section.7}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {7.1}Other Challenges}{8}{subsection.7.1}\protected@file@percent }
-\gdef \@abspage@last{8}
+\@writefile{toc}{\contentsline {section}{\numberline {6}Discussion}{5}{section.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7}Technical Challenges}{5}{section.7}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces System architecture: data flows through modular layers from OGB dataset to Streamlit dashboard.\relax }}{6}{figure.caption.10}\protected@file@percent }
+\newlabel{fig:architecture}{{5}{6}{System architecture: data flows through modular layers from OGB dataset to Streamlit dashboard.\relax }{figure.caption.10}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Dataset Explorer tab.\relax }}{6}{figure.caption.11}\protected@file@percent }
+\newlabel{fig:screenshot_explorer}{{6}{6}{Dataset Explorer tab.\relax }{figure.caption.11}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Algorithm Runner tab.\relax }}{7}{figure.caption.12}\protected@file@percent }
+\newlabel{fig:screenshot_runner}{{7}{7}{Algorithm Runner tab.\relax }{figure.caption.12}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Results Dashboard tab.\relax }}{7}{figure.caption.13}\protected@file@percent }
+\newlabel{fig:screenshot_dashboard}{{8}{7}{Results Dashboard tab.\relax }{figure.caption.13}{}}
+\gdef \@abspage@last{7}
